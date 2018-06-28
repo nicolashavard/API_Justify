@@ -1,0 +1,26 @@
+{
+  "name": "api_justify",
+  "version": "0.0.1",
+  "description": "Une API pour Tictactrip",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicolashavard/API_Justify.git"
+  },
+  "author": "Nicolas Havard",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nicolashavard/API_Justify/issues"
+  },
+  "homepage": "https://github.com/nicolashavard/API_Justify#readme",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "express": "^4.16.3",
+    "jsonwebtoken": "^8.3.0",
+    "mongoose": "^5.1.7",
+    "morgan": "^1.9.0"
+  }
+}

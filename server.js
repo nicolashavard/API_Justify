@@ -11,6 +11,7 @@ const User   = require('./app/models/user');
 
 // Configuration
 const port = process.env.PORT || 3000;
+let rateLimit = {};
 mongoose.connect(config.database);
 app.set('superSecret', config.secret);
 
@@ -62,7 +63,7 @@ apiRoutes.post('/token', function(req, res) {
             const token = jwt.sign(payload, app.get('superSecret'), {
                 expiresIn: '24h'
             });
-
+            rateLimit[token] = {words : 0, date: new Date()};
             res.json({
                 success: true,
                 message: 'Voici le token',
@@ -112,63 +113,59 @@ apiRoutes.get('/users', function(req, res) {
 });
 
 
-//TODO faire la justification
-apiRoutes.post('/justify', function(req, res) {
-    // console.log(req.body.length);
 
+apiRoutes.post('/justify', function(req, res) {
+    let token = req.headers['x-access-token'];
+
+    let day = rateLimit[token].date;
+    day = day.getDate();
+    let currentDate = new Date();
+    let currentDay = currentDate.getDate();
+
+    if (currentDay !== day) {
+        rateLimit[token].date = currentDay;
+        rateLimit[token].words = 0;
+    }
     const array = req.body.split(/\n|\s/);
 
-
-    // function fill(text, str){
-    var index = 0;
-    let text = [""];
-    // console.log('text[0] : '+text[0]);
-    //
-    // }
-    // TODO 81 eme escpace
-    array.forEach( (str) => {
-        // console.log('text : '+text[index].length + "\nstr : "+str.length);
-        if(text[index].length + str.length <= 80) {
-            text[index] += str + ' ';
-        } else {
-            text[index] = text[index].substr(0, text[index].length - 1);
-            // console.log(text[index].length);
-            if(text[index].length !== 80) {
-                let fill = 80 - text[index].length;
-                const re = /\s/g;
-                let spaces = [];
-                while ((match = re.exec(text[index])) !== null) {
-                    spaces.push(match.index);
+    console.log(rateLimit);
+    rateLimit[token].words += array.length;
+    if(rateLimit[token].words > 80000)
+        res.status(402).json({ success: false, message: '402 Payment Required.' });
+    else {
+        let index = 0;
+        let text = [""];
+        array.forEach((str) => {
+            if (text[index].length + str.length <= 80) {
+                text[index] += str + ' ';
+            } else {
+                text[index] = text[index].substr(0, text[index].length - 1);
+                if (text[index].length !== 80) {
+                    let fill = 80 - text[index].length;
+                    const re = /\s/g;
+                    let spaces = [];
+                    while ((match = re.exec(text[index])) !== null) {
+                        spaces.push(match.index);
+                    }
+                    spaces = spaces.reverse();
+                    let i = 0;
+                    while (fill > 0) {
+                        text[index] = text[index].split('');
+                        text[index].splice(spaces[i], 0, ' ');
+                        text[index] = text[index].join('');
+                        i++;
+                        fill--;
+                    }
                 }
-                // console.log(spaces.reverse());
-                // console.log(fill);
-                // console.log('ok');
-                spaces = spaces.reverse();
-                let i = 0;
-                while(fill > 0){
-                    // console.log(spaces);
-                    // console.log(text[index]);
-                    // console.log('truc : "'+text[index][spaces[i]]+'"');
-                    text[index] = text[index].split('');
-                    // text[index].splice(spaces[i], 0, ' ');
-                    text[index].splice(spaces[i], 0, ' ');
-                    // text[index] = text[index].replace(' ', '  ');
-                    text[index] = text[index].join('');
-
-                    // console.log(text[index]);
-                    // console.log(text[index]);
-                    i++;
-                    fill--;
-                }
+                index++;
+                text[index] = "";
+                text[index] += str + ' ';
             }
-            index++;
-            text[index] = "";
-            text[index] += str + ' ';
-        }
-    });
-    text[index] = text[index].substr(0, text[index].length - 1);
-    text = text.join("\n");
-    return res.send(text);
+        });
+        text[index] = text[index].substr(0, text[index].length - 1);
+        text = text.join("\n");
+        return res.send(text);
+    }
 });
 
 

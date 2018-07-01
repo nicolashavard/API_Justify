@@ -36,7 +36,7 @@ app.get('/setup', function(req, res) {
         if (err) throw err;
 
         console.log('User saved successfully');
-        res.json({ success: true });
+        res.status(201).json({ success: true });
     });
 });
 
@@ -53,14 +53,14 @@ apiRoutes.post('/token', function(req, res) {
         if (err) throw err;
 
         if (!user) {
-            res.json({ success: false, message: 'Authentication failed. User not found.' });
+            res.json({ success: false, message: 'Authentication failed. email not found.' });
         } else {
 
             const payload = {
                 email: user.email
             };
             const token = jwt.sign(payload, app.get('superSecret'), {
-                expiresIn: '1h'
+                expiresIn: '24h'
             });
 
             res.json({
@@ -114,7 +114,61 @@ apiRoutes.get('/users', function(req, res) {
 
 //TODO faire la justification
 apiRoutes.post('/justify', function(req, res) {
-    return res.send(req.body);
+    // console.log(req.body.length);
+
+    const array = req.body.split(/\n|\s/);
+
+
+    // function fill(text, str){
+    var index = 0;
+    let text = [""];
+    // console.log('text[0] : '+text[0]);
+    //
+    // }
+    // TODO 81 eme escpace
+    array.forEach( (str) => {
+        // console.log('text : '+text[index].length + "\nstr : "+str.length);
+        if(text[index].length + str.length <= 80) {
+            text[index] += str + ' ';
+        } else {
+            text[index] = text[index].substr(0, text[index].length - 1);
+            // console.log(text[index].length);
+            if(text[index].length !== 80) {
+                let fill = 80 - text[index].length;
+                const re = /\s/g;
+                let spaces = [];
+                while ((match = re.exec(text[index])) !== null) {
+                    spaces.push(match.index);
+                }
+                // console.log(spaces.reverse());
+                // console.log(fill);
+                // console.log('ok');
+                spaces = spaces.reverse();
+                let i = 0;
+                while(fill > 0){
+                    // console.log(spaces);
+                    // console.log(text[index]);
+                    // console.log('truc : "'+text[index][spaces[i]]+'"');
+                    text[index] = text[index].split('');
+                    // text[index].splice(spaces[i], 0, ' ');
+                    text[index].splice(spaces[i], 0, ' ');
+                    // text[index] = text[index].replace(' ', '  ');
+                    text[index] = text[index].join('');
+
+                    // console.log(text[index]);
+                    // console.log(text[index]);
+                    i++;
+                    fill--;
+                }
+            }
+            index++;
+            text[index] = "";
+            text[index] += str + ' ';
+        }
+    });
+    text[index] = text[index].substr(0, text[index].length - 1);
+    text = text.join("\n");
+    return res.send(text);
 });
 
 
